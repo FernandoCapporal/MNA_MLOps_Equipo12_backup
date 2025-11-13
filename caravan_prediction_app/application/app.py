@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
     # Register custom classes for pickle
     register_custom_classes()
     # Load the pipeline in the singleton
-    pipeline_singleton.load_pipeline(pipeline_path=pipeline_path)
+    pipeline_singleton.load_pipeline(folder_name=pipeline_path)
     yield
     # === SHUTDOWN ===
 
