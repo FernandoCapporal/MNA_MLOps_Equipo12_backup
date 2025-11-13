@@ -41,32 +41,36 @@ def run_insurance_pipeline():
     preprocessor = Preprocessor(df)
     processed = preprocessor.apply_preprocess(sociodemographic_cols, product_cols)
 
+    """ El siguiente flujo se encuentra comentado para evitar el entrenamiento, ya que 
+    desde los notebooks de experimentación ahora se generan los modelos y se guardan en la carpeta models.
+    El user puede pasar como argumento el path del mejor modelo guardado para hacer inferencias directamente. """
+
     # Entrenamiento del modelo
-    trainer = H2OAutoMLTrainer(max_models=20, max_runtime_secs=300)
-    trainer.prepare_data(processed, target_col='target')
-    trainer.train(target_col='target')
+    # trainer = H2OAutoMLTrainer(max_models=20, max_runtime_secs=300)
+    # trainer.prepare_data(processed, target_col='target')
+    # trainer.train(target_col='target')
 
-    # Preparación para validación
-    X = processed.drop(columns='target')
-    y = processed['target']
+    # # Preparación para validación
+    # X = processed.drop(columns='target')
+    # y = processed['target']
 
-    # Split de datos
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=42
-    )
+    # # Split de datos
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=0.2, stratify=y, random_state=42
+    # )
 
-    # Predicciones y evaluación
-    predictions = trainer.predict(X_test, auto_threshold=True, y_true=y_test)
+    # # Predicciones y evaluación
+    # predictions = trainer.predict(X_test, auto_threshold=True, y_true=y_test)
 
-    current_file = Path(__file__).resolve()
-    project_root = current_file.parent.parent.parent
-    models_dir = project_root / 'models'
-    current_time = datetime.now().strftime("%Y-%m-%d_T_%H_%M_%S")
-    model_name = "h2o_automl_model" + f"_{current_time}"
-    h2o_model_path = str(models_dir) + f"/{model_name}/"
-    h2o_model_path = str(models_dir) + f"/h2o_automl_model/"
+    # current_file = Path(__file__).resolve()
+    # project_root = current_file.parent.parent.parent
+    # models_dir = project_root / 'models'
+    # current_time = datetime.now().strftime("%Y-%m-%d_T_%H_%M_%S")
+    # model_name = "h2o_automl_model" + f"_{current_time}"
+    # h2o_model_path = str(models_dir) + f"/{model_name}/"
+    # h2o_model_path = str(models_dir) + f"/h2o_automl_model/"
 
-    logger.info(f"Saving model to {models_dir} with name {model_name}")
-    trainer.save_model(model_name=model_name, base_path=str(models_dir))
+    # logger.info(f"Saving model to {models_dir} with name {model_name}")
+    # trainer.save_model(model_name=model_name, base_path=str(models_dir))
 
-    return preprocessor, sociodemographic_cols, h2o_model_path
+    return preprocessor, sociodemographic_cols  # h2o_model_path
