@@ -258,7 +258,10 @@ def create_prediction_pipeline(zone_mapper_df, sociodemographic_cols,
 def main():
     logger.info("Iniciando creación automática del pipeline de predicción...")
 
-    preprocessor, sociodemographic_cols, h2o_model_path = run_insurance_pipeline()
+    preprocessor, sociodemographic_cols = run_insurance_pipeline()
+
+    """ Aqui se puede escoger el mejor modelo guardado para hacer inferencias directamente. """
+    h2o_model_path = "../models/GBM_3_AutoML_1_20251112_191136/"
 
     prediction_pipeline = create_prediction_pipeline(
         zone_mapper_df=preprocessor.zone_mapper_df,
