@@ -9,14 +9,13 @@ from splunk_otel.tracing import start_tracing
 from datetime import datetime
 from caravan_prediction_app.application.settings import Settings
 from caravan_prediction_app.services.insurance_company_server import PipelineSingleton
-from pathlib import Path
 from fastapi import UploadFile, File, HTTPException
 from fastapi.responses import Response
 from io import BytesIO
 import pandas as pd
 
 from caravan_prediction_app.utils.pickle_registry import register_custom_classes
-from src.pipelines.main_pipeline import (
+from src.pipelines.build_pipeline import (
     SociodemographicToZoneTransformer,
     ColumnDropper,
     SkewnessCorrector,
@@ -29,10 +28,7 @@ logger = logging.getLogger(settings.APPLICATION_ID)
 pipeline_singleton = PipelineSingleton()
 
 
-current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent.parent
-pipeline_path = str(project_root / "src" / "prediction_pipeline.pkl")
-logger.info(pipeline_path)
+pipeline_path = 'models/'
 
 start_tracing(service_name=settings.X_APPLICATION_ID)
 logging.basicConfig(format=settings.LOG_PATTERN, level=settings.LOG_LEVEL)
@@ -87,7 +83,7 @@ async def lifespan(app: FastAPI):
     # Register custom classes for pickle
     register_custom_classes()
     # Load the pipeline in the singleton
-    pipeline_singleton.load_pipeline(pipeline_path=pipeline_path)
+    pipeline_singleton.load_pipeline(folder_name=pipeline_path)
     yield
     # === SHUTDOWN ===
 

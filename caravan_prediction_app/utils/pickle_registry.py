@@ -11,7 +11,7 @@ logger = logging.getLogger(settings.APPLICATION_ID)
 def register_custom_classes():
     """Registra las clases custom para pickle de forma segura"""
     try:
-        from src.pipelines.main_pipeline import (
+        from src.pipelines.build_pipeline import (
             SociodemographicToZoneTransformer,
             ColumnDropper,
             SkewnessCorrector,
