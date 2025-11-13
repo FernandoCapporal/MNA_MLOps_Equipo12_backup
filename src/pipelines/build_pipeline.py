@@ -6,6 +6,10 @@ import numpy as np
 import h2o
 from sklearn.pipeline import Pipeline
 from src.data.make_dataset_and_model import run_insurance_pipeline
+import os
+import io
+import boto3
+from datetime import datetime
 
 logger = logging.getLogger('preprocessor_logger')
 logger.setLevel(logging.INFO)
@@ -272,9 +276,39 @@ def main():
         best_threshold=0.1
     )
 
-    save_path = "../prediction_pipeline.pkl"
-    joblib.dump(prediction_pipeline, save_path)
-    logger.info(f"Pipeline guardado exitosamente en: {save_path}")
+    # Variables de entorno para acceso a S3
+    aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
+    aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    aws_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")  # valor por defecto
+
+    if not all([aws_access_key, aws_secret_key]):
+        logger.error("No se encontraron las credenciales de AWS en las variables de entorno.")
+        return
+
+    # Configuramos cliente de S3
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=aws_access_key,
+        aws_secret_access_key=aws_secret_key,
+        region_name=aws_region,
+    )
+
+    # Nombre del bucket y clave del objeto
+    bucket_name = os.getenv("S3_BUCKET_NAME", "")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    object_key = f"models/prediction_pipeline_{timestamp}.pkl"
+
+    # Guardar el pipeline en un buffer de memoria
+    buffer = io.BytesIO()
+    joblib.dump(prediction_pipeline, buffer)
+    buffer.seek(0)
+
+    try:
+        # Subir el archivo a S3
+        s3.upload_fileobj(buffer, bucket_name, object_key)
+        logger.info(f"Pipeline guardado exitosamente en S3: s3://{bucket_name}/{object_key}")
+    except Exception as e:
+        logger.error(f"Error al subir el pipeline a S3: {e}")
 
 
 if __name__ == "__main__":
