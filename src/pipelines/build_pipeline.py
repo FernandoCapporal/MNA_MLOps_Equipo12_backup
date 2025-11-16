@@ -248,10 +248,6 @@ def create_prediction_pipeline(zone_mapper_df, sociodemographic_cols,
         )),
         ('skewness_corrector', SkewnessCorrector(
             power_params=power_params
-        )),
-        ('h2o_predictor', H2OPredictor(
-            model_path=h2o_model_path,
-            best_threshold=best_threshold
         ))
     ])
 
@@ -296,7 +292,7 @@ def main():
     # Nombre del bucket y clave del objeto
     bucket_name = os.getenv("S3_BUCKET_NAME", "")
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    object_key = f"models/prediction_pipeline_{timestamp}.pkl"
+    object_key = f"models/preprocessing_pipeline_{timestamp}.pkl"
 
     # Guardar el pipeline en un buffer de memoria
     buffer = io.BytesIO()
