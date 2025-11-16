@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     X_APPLICATION_ID: str = APPLICATION_ID
     LOG_PATTERN: str = '%(asctime)s.%(msecs)s:%(name)s:%(thread)d:(%(threadName)-10s):%(levelname)s:%(process)d:%(message)s'
     LOG_LEVEL: str = "INFO"
+    BEST_THRESHOLD: float = None
 
     # S3
     AWS_ACCESS_KEY_ID: str = ''

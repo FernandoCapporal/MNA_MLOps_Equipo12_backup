@@ -110,6 +110,74 @@ docker run -p 8080:8080 --env-file .env caravan_predictions
 
 --------------------------------------------------------------------------------
 
+# 🚀 Instrucciones para desplegar **caravan_prediction:v1.x.x**
+
+## 🐳 1. Descargar desde Docker Hub (si está disponible online)
+```bash
+docker pull caravan_prediction:v1.x.x
+docker run -p 8080:8080 --env-file .env caravan_prediction:v1.x.x
+```
+
+> 💡 *Asegúrate de reemplazar `v1.x.x` por la versión más reciente publicada.*
+
+---
+
+## 🛠️ 2. Construir la imagen desde el repositorio local
+Si prefieres compilar la imagen tú mismo, utiliza los siguientes comandos:
+
+```bash
+# Construir la imagen
+docker build -t caravan_prediction:v1.0.0 .
+
+# Ejecutar la aplicación en el puerto 8080 usando el archivo .env
+docker run -p 8080:8080 --env-file .env caravan_prediction:v1.0.0
+```
+
+> ⚙️ Esto levantará el servicio FastAPI en http://localhost:8080
+
+---
+
+## 🔐 3. Archivo `.env` — Variables necesarias
+
+Tu archivo `.env` debe incluir las siguientes variables de entorno, esenciales para la conexión con AWS S3 y la configuración del API:
+
+| Variable | Descripción |
+|-----------|--------------|
+| **AWS_DEFAULT_REGION** | Región de AWS donde se aloja el bucket (ejemplo: `us-east-2`). |
+| **AWS_ACCESS_KEY_ID** | ID de la clave de acceso para autenticación en AWS. |
+| **AWS_SECRET_ACCESS_KEY** | Clave secreta asociada al `AWS_ACCESS_KEY_ID`. |
+| **S3_BUCKET_NAME** | Nombre del bucket en S3 donde se almacenan los modelos y pipelines (por defecto `mna-tec-mlops`). |
+| **S3_MODEL_KEY** | Ruta completa del modelo dentro del bucket (por ejemplo `h2o_models/models/GBM_3_AutoML_1_20251112_191136`). |
+| **API_WORKERS** | Número de workers de Uvicorn que manejarán las peticiones del API (por defecto `1`). |
+| **BEST_THRESHOLD** | Umbral de decisión para el clasificador H2O (por defecto `0.1`). |
+
+---
+
+## 🧩 4. Ejemplo de archivo `.env`
+```env
+AWS_DEFAULT_REGION=us-east-2
+AWS_ACCESS_KEY_ID=TU_ACCESS_KEY
+AWS_SECRET_ACCESS_KEY=TU_SECRET_KEY
+S3_BUCKET_NAME=mna-tec-mlops
+S3_MODEL_KEY=h2o_models/models/GBM_3_AutoML_1_20251112_191136
+API_WORKERS=1
+BEST_THRESHOLD=0.1
+S3_MODEL_PATH=h2o_models/models
+```
+
+---
+
+## ✅ 5. Verificación del despliegue
+Una vez el contenedor esté en ejecución, abre tu navegador o usa `curl`:
+
+```bash
+curl http://localhost:8080/docs
+```
+
+Esto debería mostrar la documentación interactiva del API (**Swagger UI**) para el servicio de predicción `caravan_prediction`.
+
+--------------------------------------------------------------------------------
+
 3. Uso del Endpoint de Predicción
 
 Una vez que la aplicación esté levantada y el contenedor de Docker esté ejecutándose, puedes utilizar el siguiente endpoint para enviar un archivo CSV y recibir las predicciones.
