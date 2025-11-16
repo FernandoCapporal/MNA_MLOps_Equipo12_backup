@@ -14,12 +14,13 @@ class Settings(BaseSettings):
     X_APPLICATION_ID: str = APPLICATION_ID
     LOG_PATTERN: str = '%(asctime)s.%(msecs)s:%(name)s:%(thread)d:(%(threadName)-10s):%(levelname)s:%(process)d:%(message)s'
     LOG_LEVEL: str = "INFO"
+    BEST_THRESHOLD: float = None
 
     # S3
-    AWS_S3_BUCKET: str = ''
     AWS_ACCESS_KEY_ID: str = ''
     AWS_SECRET_ACCESS_KEY: str = ''
-    AWS_SESSION_TOKEN: str = ''
+    S3_BUCKET_NAME: str = ''
+    AWS_DEFAULT_REGION: str = ''
 
     class Config:
         case_sensitive = False

@@ -8,31 +8,26 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from splunk_otel.tracing import start_tracing
 from datetime import datetime
 from caravan_prediction_app.application.settings import Settings
-from caravan_prediction_app.services.insurance_company_server import PipelineSingleton
-from pathlib import Path
+from caravan_prediction_app.clases.inference_clases import PredictionInput
+from caravan_prediction_app.services.insurance_company_server import PipelineSingleton, load_and_format_dataframe, \
+    load_and_format_json_dataframe
 from fastapi import UploadFile, File, HTTPException
 from fastapi.responses import Response
 from io import BytesIO
-import pandas as pd
-
+from fastapi.responses import JSONResponse
 from caravan_prediction_app.utils.pickle_registry import register_custom_classes
-from src.pipelines.main_pipeline import (
+from src.pipelines.build_pipeline import (
     SociodemographicToZoneTransformer,
     ColumnDropper,
     SkewnessCorrector,
     H2OPredictor,
 )
 
-
 settings = Settings()
 logger = logging.getLogger(settings.APPLICATION_ID)
 pipeline_singleton = PipelineSingleton()
 
-
-current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent.parent
-pipeline_path = str(project_root / "src" / "prediction_pipeline.pkl")
-logger.info(pipeline_path)
+pipeline_path = 'models/'
 
 start_tracing(service_name=settings.X_APPLICATION_ID)
 logging.basicConfig(format=settings.LOG_PATTERN, level=settings.LOG_LEVEL)
@@ -86,8 +81,10 @@ async def lifespan(app: FastAPI):
     # === STARTUP ===
     # Register custom classes for pickle
     register_custom_classes()
+    # Load the model from s3
+    pipeline_singleton.load_model()
     # Load the pipeline in the singleton
-    pipeline_singleton.load_pipeline(pipeline_path=pipeline_path)
+    pipeline_singleton.load_pipeline(folder_name=pipeline_path)
     yield
     # === SHUTDOWN ===
 
@@ -107,7 +104,7 @@ async def health_check():
 
 @app.post(f"{settings.BASE_PATH}/predict", tags=["Pipeline"])
 async def upload_csv(
-    file: UploadFile = File(...)
+        file: UploadFile = File(...)
 ):
     """
     Endpoint que recibe un archivo CSV, realiza inferencias
@@ -120,11 +117,7 @@ async def upload_csv(
             raise HTTPException(status_code=400, detail="Only CSV files are allowed.")
 
         contents = await file.read()
-
-        sociodemographic_cols = [f"SD_{i}" for i in range(1, 44)]
-        product_cols = [f"PD_{i-44}" for i in range(44, 86)]
-        cols = sociodemographic_cols + product_cols + ["target"]
-        df = pd.read_csv(BytesIO(contents), header=None, names=cols)
+        df = load_and_format_dataframe(contents)
 
         logger.info(f"CSV loaded successfully: {df.shape[0]} rows, {df.shape[1]} columns")
 
@@ -145,6 +138,31 @@ async def upload_csv(
 
     except Exception as e:
         logger.error(f"Failed to process inference: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post(f"{settings.BASE_PATH}/predict-json", tags=["Pipeline"])
+async def predict_from_json(input_data: PredictionInput):
+    """
+    Endpoint que recibe una lista de diccionarios JSON,
+    convierte a DataFrame, ejecuta inferencia y devuelve las predicciones como JSON.
+    """
+    logger.info("Processing inference with uploaded JSON")
+
+    try:
+        df = load_and_format_json_dataframe(input_data.data)
+
+        predictions_df = pipeline_singleton.predict(df)
+        logger.info(f"Predictions generated successfully: {predictions_df.shape}")
+
+        return JSONResponse(
+            content=predictions_df.to_dict(orient="records")
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to process inference from JSON: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
